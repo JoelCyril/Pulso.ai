@@ -25,10 +25,10 @@ export const CircularHealthScore = ({ score, lifeExpectancy }: CircularHealthSco
     };
 
     return (
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-0">
             <div className="relative">
                 {/* SVG Circle */}
-                <svg className="transform -rotate-90" width="280" height="280">
+                <svg className="transform -rotate-90 w-[200px] h-[200px] sm:w-[240px] sm:h-[240px] md:w-[280px] md:h-[280px]" viewBox="0 0 280 280">
                     {/* Background circle */}
                     <circle
                         cx="140"
@@ -62,11 +62,11 @@ export const CircularHealthScore = ({ score, lifeExpectancy }: CircularHealthSco
                         transition={{ delay: 0.5, type: "spring" }}
                         className="text-center"
                     >
-                        <div className="text-6xl font-bold" style={{ color: getScoreColor(score) }}>
+                        <div className="text-4xl sm:text-5xl md:text-6xl font-bold" style={{ color: getScoreColor(score) }}>
                             {score}
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1">/ 100</div>
-                        <div className="text-sm font-medium mt-2">{getScoreLabel(score)}</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground mt-1">/ 100</div>
+                        <div className="text-xs sm:text-sm font-medium mt-2">{getScoreLabel(score)}</div>
                     </motion.div>
                 </div>
             </div>
@@ -76,7 +76,7 @@ export const CircularHealthScore = ({ score, lifeExpectancy }: CircularHealthSco
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1 }}
-                    className="mt-8 px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center gap-4 shadow-xl"
+                    className="mt-4 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center gap-3 sm:gap-4 shadow-xl w-full sm:w-auto"
                 >
                     <div className="p-2 bg-white/20 rounded-full text-white">
                         <Heart className="w-4 h-4 fill-current" />

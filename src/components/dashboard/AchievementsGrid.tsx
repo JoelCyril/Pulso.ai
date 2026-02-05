@@ -38,7 +38,7 @@ export const AchievementsGrid = ({ achievements }: AchievementsGridProps) => {
             </CardHeader>
             <CardContent>
                 <TooltipProvider>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                         {achievements.map((achievement, index) => (
                             <Tooltip key={achievement.id}>
                                 <TooltipTrigger asChild>
@@ -47,7 +47,7 @@ export const AchievementsGrid = ({ achievements }: AchievementsGridProps) => {
                                         animate={{ scale: 1, opacity: 1 }}
                                         transition={{ delay: index * 0.1 }}
                                         className={`
-                      relative aspect-square rounded-xl flex items-center justify-center cursor-pointer
+                      relative aspect-square rounded-lg sm:rounded-xl flex items-center justify-center cursor-pointer
                       transition-all duration-300 hover:scale-110
                       ${achievement.unlocked
                                                 ? "bg-gradient-to-br from-primary to-primary/60 text-white shadow-lg shadow-primary/50"
@@ -55,7 +55,7 @@ export const AchievementsGrid = ({ achievements }: AchievementsGridProps) => {
                                             }
                     `}
                                     >
-                                        {iconMap[achievement.icon] || <Trophy className="w-6 h-6" />}
+                                        <div className="w-5 h-5 sm:w-6 sm:h-6">{iconMap[achievement.icon] || <Trophy className="w-full h-full" />}</div>
 
                                         {achievement.unlocked && (
                                             <motion.div

@@ -207,7 +207,7 @@ export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: Chat
   return (
     <div className="flex flex-col h-full bg-transparent overflow-hidden">
       {/* Messages Area */}
-      <ScrollArea className="flex-1 px-4 py-4">
+      <ScrollArea className="flex-1 px-3 sm:px-4 py-3 sm:py-4">
         <div className="space-y-6 pb-4">
           <AnimatePresence initial={false}>
             {messages.map((message) => (
@@ -217,7 +217,7 @@ export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: Chat
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 className={`flex w-full ${message.sender === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div className={`flex max-w-[85%] items-end gap-2 ${message.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className={`flex max-w-[90%] sm:max-w-[85%] items-end gap-1.5 sm:gap-2 ${message.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-black/10 
                     ${message.sender === "bot" ? "bg-primary/20 text-primary" : "bg-black/20 text-black"}`}>
                     {message.sender === "bot" ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}

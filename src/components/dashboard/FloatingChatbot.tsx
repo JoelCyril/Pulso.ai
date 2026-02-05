@@ -24,14 +24,14 @@ export const FloatingChatbot = ({ healthData, healthScore, onDashboardUpdate }: 
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                        className="fixed bottom-6 right-6 z-50"
+                        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50"
                     >
                         <Button
                             onClick={() => setIsOpen(true)}
                             size="lg"
-                            className="h-16 w-16 rounded-full shadow-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary/80 hover:to-primary/70 transition-all hover:scale-110 border-2 border-white/30"
+                            className="h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary/80 hover:to-primary/70 transition-all hover:scale-110 border-2 border-white/30"
                         >
-                            <MessageSquare className="w-7 h-7 text-white drop-shadow-md" />
+                            <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-md" />
                         </Button>
                     </motion.div>
                 )}
@@ -45,7 +45,7 @@ export const FloatingChatbot = ({ healthData, healthScore, onDashboardUpdate }: 
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="fixed bottom-6 right-6 z-50 w-[450px] max-w-[calc(100vw-3rem)] h-[650px]"
+                        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[450px] max-w-[calc(100vw-2rem)] sm:max-w-[450px] h-[calc(100vh-8rem)] sm:h-[650px] max-h-[650px]"
                     >
                         <Card className="shadow-2xl border-2 border-white/30 h-full flex flex-col overflow-hidden glass-card bg-gradient-to-br from-white/25 via-white/15 to-white/20 backdrop-blur-2xl">
                             {/* Header */}

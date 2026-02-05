@@ -57,7 +57,7 @@ export const OverviewPanel = ({ healthData, healthScore, analysisResult }: Overv
                 <div className="space-y-2">
                     <div className="flex justify-between items-center">
                         <h4 className="font-semibold">Overall Health Score</h4>
-                        <span className={`text-3xl font-bold ${getScoreColor(healthScore)}`}>
+                        <span className={`text-2xl sm:text-3xl font-bold ${getScoreColor(healthScore)}`}>
                             {healthScore}
                         </span>
                     </div>
@@ -76,16 +76,16 @@ export const OverviewPanel = ({ healthData, healthScore, analysisResult }: Overv
                 )}
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
                     {metrics.map((metric, index) => (
-                        <div key={index} className="p-4 rounded-lg border bg-card space-y-2">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                {metric.icon}
-                                <span className="text-sm font-medium">{metric.label}</span>
+                        <div key={index} className="p-3 sm:p-4 rounded-lg border bg-card space-y-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                                <div className="w-4 h-4 sm:w-5 sm:h-5">{metric.icon}</div>
+                                <span className="text-xs sm:text-sm font-medium">{metric.label}</span>
                             </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold">{metric.value}</span>
-                                <span className="text-xs text-muted-foreground">/ {metric.target}</span>
+                            <div className="flex items-baseline gap-1 sm:gap-2">
+                                <span className="text-xl sm:text-2xl font-bold">{metric.value}</span>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground">/ {metric.target}</span>
                             </div>
                             <Progress value={metric.progress} className="h-1.5" />
                         </div>

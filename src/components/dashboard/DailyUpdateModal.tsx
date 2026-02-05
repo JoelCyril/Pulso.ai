@@ -60,9 +60,9 @@ export const DailyUpdateModal = ({ onUpdate }: DailyUpdateModalProps) => {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="fixed top-6 right-6 z-50"
+                        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50"
                     >
-                        <div className="bg-primary text-primary-foreground rounded-lg shadow-2xl p-4 flex items-center gap-3 max-w-sm">
+                        <div className="bg-primary text-primary-foreground rounded-lg shadow-2xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3 max-w-[calc(100vw-2rem)] sm:max-w-sm">
                             <Bell className="w-5 h-5 shrink-0" />
                             <div className="flex-1">
                                 <p className="font-semibold text-sm">Daily Health Update</p>
@@ -95,9 +95,9 @@ export const DailyUpdateModal = ({ onUpdate }: DailyUpdateModalProps) => {
 
             {/* Daily Update Modal */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl">Daily Health Update</DialogTitle>
+                        <DialogTitle className="text-xl sm:text-2xl">Daily Health Update</DialogTitle>
                         <DialogDescription>
                             Update your health metrics for today. You can only update once per day.
                         </DialogDescription>

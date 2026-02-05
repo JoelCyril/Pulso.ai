@@ -90,7 +90,7 @@ const Login = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6 bg-cover bg-center bg-no-repeat"
+      className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-cover bg-center bg-no-repeat bg-scroll md:bg-fixed"
       style={{ backgroundImage: `url(${signupBg})` }}
     >
       <motion.div
@@ -100,13 +100,13 @@ const Login = () => {
         className="w-full max-w-md"
       >
         <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl">
-          <CardHeader className="text-center space-y-4">
+          <CardHeader className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6">
             <div className="flex justify-center">
-              <div className="p-3 rounded-full bg-primary/10">
-                <Heart className="w-8 h-8 text-primary" />
+              <div className="p-2.5 sm:p-3 rounded-full bg-primary/10">
+                <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold">
+            <CardTitle className="text-2xl sm:text-3xl font-bold">
               {isSignUp ? "Create Account" : "Welcome Back"}
             </CardTitle>
             <CardDescription>
@@ -115,8 +115,8 @@ const Login = () => {
                 : "Sign in to continue your wellness journey"}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="p-4 sm:p-6">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">

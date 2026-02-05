@@ -231,13 +231,13 @@ const Dashboard = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-4xl font-bold mb-2 text-white drop-shadow-lg">Welcome back</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 text-white drop-shadow-lg">Welcome back</h1>
         </motion.div>
 
         {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Left: Recommendations Panel */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -256,7 +256,7 @@ const Dashboard = () => {
             className="lg:col-span-4"
           >
             <Tabs defaultValue="health-score" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 glass-card bg-gradient-to-r from-primary/30 via-primary/20 to-primary/30 border-white/30 p-1.5 backdrop-blur-xl mb-4">
+              <TabsList className="grid w-full grid-cols-2 glass-card bg-gradient-to-r from-primary/30 via-primary/20 to-primary/30 border-white/30 p-1 sm:p-1.5 backdrop-blur-xl mb-3 sm:mb-4">
                 <TabsTrigger
                   value="health-score"
                   className="flex items-center gap-2 data-[state=active]:bg-white/30 data-[state=active]:text-white data-[state=active]:shadow-lg text-white/70 transition-all rounded-2xl font-semibold"
@@ -331,12 +331,12 @@ const Dashboard = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="update" className="mt-6">
-              <div className="text-center p-8 rounded-lg glass-card border-white/20">
-                <p className="text-white/90 mb-4 text-lg">
+            <TabsContent value="update" className="mt-4 sm:mt-6">
+              <div className="text-center p-4 sm:p-6 md:p-8 rounded-lg glass-card border-white/20">
+                <p className="text-white/90 mb-3 sm:mb-4 text-base sm:text-lg">
                   Daily health updates are managed through the popup modal.
                 </p>
-                <p className="text-sm text-white/70">
+                <p className="text-xs sm:text-sm text-white/70">
                   You'll receive a notification when it's time to update your health metrics.
                 </p>
               </div>

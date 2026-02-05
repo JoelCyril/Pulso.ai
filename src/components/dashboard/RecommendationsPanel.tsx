@@ -25,7 +25,7 @@ export const RecommendationsPanel = ({ recommendations }: RecommendationsPanelPr
                 </div>
                 <CardDescription>AI-powered insights tailored for you</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
+            <CardContent className="space-y-3 max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto">
                 {recommendations.map((rec, index) => (
                     <motion.div
                         key={rec.id}
