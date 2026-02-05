@@ -17,8 +17,8 @@ const cards = [
 
 export const UnderstandingHealthSection = () => {
     return (
-        <section className="py-24 bg-background">
-            <div className="container px-6 mx-auto">
+        <section className="py-16 sm:py-24 bg-background">
+            <div className="container px-4 sm:px-6 mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -38,7 +38,7 @@ export const UnderstandingHealthSection = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: idx * 0.1 }}
-                            className="bg-white p-8 rounded-none border-l-2 border-primary/20 hover:border-primary transition-colors duration-300"
+                            className="bg-white p-6 sm:p-8 rounded-none border-l-2 border-primary/20 hover:border-primary transition-colors duration-300"
                         >
                             <h3 className="text-xl font-serif italic text-primary mb-4">{card.title}</h3>
                             <p className="text-muted-foreground leading-relaxed">{card.content}</p>

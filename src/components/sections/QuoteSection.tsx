@@ -3,7 +3,7 @@ import pulsoEarth from "@/assets/pulso_earth.png";
 
 export const QuoteSection = () => {
     return (
-        <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
+        <section className="relative min-h-[80svh] md:min-h-[80vh] flex items-center justify-center overflow-hidden bg-black py-16">
             {/* Background */}
             <div className="absolute inset-0">
                 <img
@@ -14,7 +14,7 @@ export const QuoteSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-black/60 mix-blend-multiply" />
             </div>
 
-            <div className="container relative z-10 px-6 text-center">
+            <div className="container relative z-10 px-4 sm:px-6 text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}

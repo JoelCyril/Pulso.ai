@@ -33,10 +33,10 @@ export const Header = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
+      className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3 sm:py-4"
     >
       <nav className="container max-w-6xl mx-auto">
-        <div className="glass-card px-8 py-4 flex items-center justify-between bg-primary/95 backdrop-blur-md border border-primary/20 shadow-lg rounded-full">
+        <div className="glass-card px-4 sm:px-6 md:px-8 py-3 sm:py-4 flex items-center justify-between bg-primary/95 backdrop-blur-md border border-primary/20 shadow-lg rounded-full">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 text-primary-foreground group">
             <span className="font-script text-4xl leading-none pt-2 group-hover:opacity-90 transition-opacity">Pulso</span>

@@ -123,8 +123,9 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
     font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    -webkit-text-size-adjust: 100%;
   }
 }
 
@@ -183,6 +184,14 @@
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+  }
+
+  /* Mobile browsers often jank/ignore fixed attachments */
+  @media (max-width: 768px) {
+    .bg-mesh-gradient,
+    .dark .bg-mesh-gradient {
+      background-attachment: scroll;
+    }
   }
 
   /* Organic shapes */

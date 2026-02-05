@@ -95,8 +95,8 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-background flex flex-col items-center justify-center p-4 md:p-6 bg-hero-gradient overflow-hidden">
-      <div className="w-full max-w-[1800px] grid grid-cols-1 lg:grid-cols-12 gap-6 h-full lg:h-[90vh]">
+    <div className="min-h-svh w-full bg-background flex flex-col items-center justify-center p-4 md:p-6 bg-hero-gradient overflow-y-auto lg:overflow-hidden">
+      <div className="w-full max-w-[1800px] grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 lg:h-[90vh]">
 
         {/* Left Col: Header and Intro (Hidden on mobile to save space, visible on large) */}
         <div className="lg:col-span-3 lg:flex flex-col justify-center space-y-6 text-zinc-900 p-4 hidden">

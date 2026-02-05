@@ -3,7 +3,7 @@ import pulsoWaves from "@/assets/pulso_waves.png";
 
 export const SmartWellnessSection = () => {
     return (
-        <section className="relative py-32 overflow-hidden bg-primary">
+        <section className="relative py-20 sm:py-28 md:py-32 overflow-hidden bg-primary">
             {/* Background Image */}
             <div className="absolute inset-0">
                 <img
@@ -14,7 +14,7 @@ export const SmartWellnessSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/50 to-primary/90 mix-blend-multiply" />
             </div>
 
-            <div className="container relative z-10 px-6">
+            <div className="container relative z-10 px-4 sm:px-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     {/* Big Text Labels */}
                     <motion.div
@@ -23,7 +23,9 @@ export const SmartWellnessSection = () => {
                         viewport={{ once: true }}
                         className="text-left"
                     >
-                        <h2 className="text-6xl md:text-8xl font-bold text-white tracking-tighter opacity-20 select-none">SMART</h2>
+                        <h2 className="text-[clamp(3rem,14vw,5.5rem)] md:text-8xl font-bold text-white tracking-tighter opacity-20 select-none break-words leading-none">
+                            SMART
+                        </h2>
                     </motion.div>
                     <motion.div
                         initial={{ opacity: 0, x: 50 }}
@@ -31,7 +33,9 @@ export const SmartWellnessSection = () => {
                         viewport={{ once: true }}
                         className="text-right"
                     >
-                        <h2 className="text-6xl md:text-8xl font-bold text-white tracking-tighter opacity-20 select-none">WELLNESS</h2>
+                        <h2 className="text-[clamp(3rem,14vw,5.5rem)] md:text-8xl font-bold text-white tracking-tighter opacity-20 select-none break-words leading-none">
+                            WELLNESS
+                        </h2>
                     </motion.div>
                 </div>
 
@@ -41,7 +45,7 @@ export const SmartWellnessSection = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 }}
-                    className="text-center mt-12 max-w-4xl mx-auto bg-background/95 backdrop-blur rounded-3xl p-12 shadow-2xl border border-primary/10"
+                    className="text-center mt-10 sm:mt-12 max-w-4xl mx-auto bg-background/95 backdrop-blur rounded-3xl p-6 sm:p-10 md:p-12 shadow-2xl border border-primary/10"
                 >
                     <h3 className="text-3xl md:text-5xl font-serif text-primary mb-6 leading-tight">
                         Smarter AI for deeper <br />

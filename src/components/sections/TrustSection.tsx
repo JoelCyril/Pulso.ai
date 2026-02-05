@@ -3,9 +3,9 @@ import pulsoAnatomy from "@/assets/pulso_anatomy.png";
 
 export const TrustSection = () => {
     return (
-        <section className="py-24 bg-background relative overflow-hidden">
-            <div className="container px-6 mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+        <section className="py-16 sm:py-24 bg-background relative overflow-hidden">
+            <div className="container px-4 sm:px-6 mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
                     {/* Image Side */}
                     <motion.div
                         initial={{ opacity: 0, x: -30 }}
@@ -46,7 +46,7 @@ export const TrustSection = () => {
                         </div>
 
                         {/* Headline block */}
-                        <div className="bg-primary text-white p-12 rounded-3xl relative overflow-hidden">
+                        <div className="bg-primary text-white p-6 sm:p-10 md:p-12 rounded-3xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">Build on Trust</h2>
                             <p className="text-white/90 leading-relaxed font-light">
