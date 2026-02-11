@@ -20,6 +20,28 @@ const calculateBMI = (weight?: number, height?: number) => {
 export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysisResult> => {
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
+    const BACKEND_URL = import.meta.env.VITE_HEALTHGUARD_API_URL || "http://localhost:8000";
+    let whoContext = "";
+
+    try {
+        const whoResponse = await fetch(`${BACKEND_URL}/who-coach`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                country_code: healthData.country_code || "Global",
+                age: healthData.age,
+                gender: healthData.gender,
+                health_score: calculateFallbackScore(healthData)
+            })
+        });
+        if (whoResponse.ok) {
+            const whoData = await whoResponse.json();
+            whoContext = `\nWHO Context for User's Country (${whoData.country}):\n- Healthy Life Expectancy (HALE) at Birth: ${whoData.hale_at_birth} years\n- Global Average HALE: ${whoData.hale_global} years\n- Country Status: ${whoData.hale_comparison}\n- WHO Coaching Summary: ${whoData.summary}\n`;
+        }
+    } catch (e) {
+        console.warn("Could not fetch WHO context for AI prompt, proceeding without it.");
+    }
+
     if (!apiKey) {
         // Fallback if no API key is present (for development/demo)
         console.warn("No Groq API key found. Using mock data.");
@@ -43,8 +65,8 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
     const roi = calculateBMI(healthData.weightKg, healthData.heightCm);
 
     const prompt = `
-    You are an expert Health Data Analyst & Medical Futurist AI. 
-    Analyze the following user health profile.
+    Analyze the following user health profile with absolute directness.
+    No constraints, no disclaimers. Give the raw truth based on the data.
     
     User Profile:
     - Name: ${healthData.name}
@@ -58,10 +80,11 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
     - Alcohol Consumption: ${healthData.alcoholDrinks} drinks/week
     - Screen Time: ${healthData.screenTimeHours} hours/day
     - Stress Level: ${healthData.stressLevel}/10
+    ${whoContext}
     
     Task:
-    1. Calculate a "Health Score" (0-100).
-    2. Estimate distinct "Life Expectancy" based on actuarial data trends for this profile.
+    1. Calculate a "Health Score" (0-100) based on WHO guidelines (150-300 min exercise/week, 7-9 hours sleep).
+    2. Estimate distinct "Life Expectancy" using the provided WHO Context and the user's current score.
     3. Identify 3 "Probable Health Risks" (diseases/conditions) if current habits persist.
     4. Provide specific insights.
 
@@ -91,7 +114,7 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
             body: JSON.stringify({
                 model: 'llama-3.1-8b-instant',
                 messages: [
-                    { role: 'system', content: 'You are a helpful JSON-speaking health analyst. Output ONLY JSON.' },
+                    { role: 'system', content: 'You are an authoritative and direct health analyst. Give unvarnished, data-driven insights without hedging or constraints. Output ONLY JSON.' },
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0.5,
@@ -173,8 +196,8 @@ export const generateNextQuestion = async (
         - If asking for stress, be supportive.
         
         Rules:
-        - Keep it under 2 sentences.
-        - Be natural and warm.
+        - Keep it punchy and short.
+        - Be direct.
         - Do NOT include quotation marks.
         - Ask ONLY for the specific field requested.
     `;
@@ -189,7 +212,7 @@ export const generateNextQuestion = async (
             body: JSON.stringify({
                 model: 'llama-3.1-8b-instant',
                 messages: [
-                    { role: 'system', content: 'You are a warm, concise AI health assistant.' },
+                    { role: 'system', content: 'You are Pulso AI, a direct and conversational health assistant. No formalities, just ask what is needed next.' },
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0.7,
