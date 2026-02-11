@@ -197,22 +197,18 @@ export const OnboardingChat = ({ healthData, setHealthData, onComplete, onAnalyz
         // 2. Update Data
         const currentField = steps[currentStep].field;
         if (currentField === 'intro') {
-            const newName = inputValue;
+            setIsTyping(true);
+            const { extractInfoFromInput, generateNextQuestion } = await import("@/services/aiHealthService");
+            const extractedName = await extractInfoFromInput("name", inputValue);
+            const newName = extractedName || inputValue;
+
             setHealthData({ ...healthData, name: newName });
             setInputValue("");
+
             // 3. Move to next step
             const nextStep = currentStep + 1;
             if (nextStep < steps.length) {
                 setCurrentStep(nextStep);
-                // Pass updated data manually since state update is async
-                // Actually, for the API call, we might need the name immediately.
-                // Let's pass a temp object to the generator if needed, but the generator reads from 'healthData' param.
-                // We should wait for state or pass explicit context.
-                // For simplicity, we'll let the generator read the current state + local override?
-                // The generator function takes (field, healthData). 
-                // We must pass the *updated* data.
-                setIsTyping(true);
-                const { generateNextQuestion } = await import("@/services/aiHealthService");
                 const question = await generateNextQuestion(steps[nextStep].field, { ...healthData, name: newName });
                 addMessage(question, "bot");
                 setIsTyping(false);
@@ -221,7 +217,22 @@ export const OnboardingChat = ({ healthData, setHealthData, onComplete, onAnalyz
         }
 
         if (currentField === 'age') {
-            setHealthData({ ...healthData, age: parseInt(inputValue) || 25 });
+            setIsTyping(true);
+            const { extractInfoFromInput, generateNextQuestion } = await import("@/services/aiHealthService");
+            const extractedAge = await extractInfoFromInput("age", inputValue);
+            const age = parseInt(extractedAge) || parseInt(inputValue) || 25;
+
+            setHealthData({ ...healthData, age });
+            setInputValue("");
+
+            const nextStep = currentStep + 1;
+            if (nextStep < steps.length) {
+                setCurrentStep(nextStep);
+                const question = await generateNextQuestion(steps[nextStep].field, { ...healthData, age });
+                addMessage(question, "bot");
+                setIsTyping(false);
+                return;
+            }
         }
 
         setInputValue("");
