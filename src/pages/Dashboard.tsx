@@ -14,6 +14,13 @@ import { OverviewPanel } from "@/components/dashboard/OverviewPanel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, RefreshCw, Target } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import dashboardBg from "@/assets/dashboard.jpeg";
 
 interface HealthData {
@@ -47,6 +54,12 @@ interface Recommendation {
   category: string;
 }
 
+interface CountryOption {
+  code: string;
+  name: string;
+  region?: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [healthData, setHealthData] = useState<HealthData | null>(null);
@@ -55,6 +68,14 @@ const Dashboard = () => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("");
+  const [selectedCountryName, setSelectedCountryName] = useState<string>("");
+  const [whoInsight, setWhoInsight] = useState<string>("");
+  const [whoLoading, setWhoLoading] = useState(false);
+  const [whoError, setWhoError] = useState<string | null>(null);
+
+  const BACKEND_URL = import.meta.env.VITE_HEALTHGUARD_API_URL || "http://localhost:8000";
 
   const loadDashboardData = () => {
     try {
@@ -77,6 +98,27 @@ const Dashboard = () => {
 
         const score = calculateHealthScore(data);
         setHealthScore(score);
+
+        // Enhance with ML prediction from backend if available
+        fetch(`${BACKEND_URL}/predict-score`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            age: data.age,
+            sleep: data.sleepHours,
+            screenTime: data.screenTimeHours,
+            exercise: data.exerciseMinutes,
+            stress: data.stressLevel
+          })
+        })
+          .then(res => res.ok ? res.json() : null)
+          .then(mlData => {
+            if (mlData?.predicted_score) {
+              setHealthScore(Math.round(mlData.predicted_score));
+              console.log("WHO-Aligned ML Score received:", mlData.predicted_score);
+            }
+          })
+          .catch(err => console.warn("ML Prediction backend unavailable, using local WHO-aligned score.", err));
       } else {
         // If no health data found, redirect to onboarding to collect it
         navigate("/onboarding");
@@ -125,22 +167,91 @@ const Dashboard = () => {
     loadDashboardData();
   }, [navigate]);
 
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/countries`);
+        if (!response.ok) {
+          console.error("Failed to load countries");
+          return;
+        }
+        const data: CountryOption[] = await response.json();
+        setCountries(data);
+
+        if (!selectedCountryCode && data.length > 0) {
+          setSelectedCountryCode(data[0].code);
+          setSelectedCountryName(data[0].name);
+        }
+      } catch (error) {
+        console.error("Error loading countries", error);
+      }
+    };
+
+    fetchCountries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const calculateHealthScore = (data: HealthData): number => {
     let score = 100;
 
-    if (data.sleepHours < 6 || data.sleepHours > 9) score -= 15;
-    else if (data.sleepHours >= 7 && data.sleepHours <= 8) score += 5;
+    // WHO/NIH sleep recommendation: 7-9 hours for adults
+    if (data.sleepHours < 7 || data.sleepHours > 9) score -= 15;
+    else score += 5;
 
-    if (data.exerciseMinutes < 30) score -= 15;
-    else if (data.exerciseMinutes >= 60) score += 10;
+    // WHO exercise recommendation: 150-300 mins moderate activity/week
+    // Assuming data.exerciseMinutes is daily (based on other code)
+    const weeklyExercise = data.exerciseMinutes * 7;
+    if (weeklyExercise < 150) score -= 20;
+    else if (weeklyExercise >= 300) score += 10;
+    else score += 5;
 
+    // Lifestyle/Digital wellness (Screen time)
     if (data.screenTimeHours > 6) score -= 20;
-    else if (data.screenTimeHours < 4) score += 5;
+    else if (data.screenTimeHours < 3) score += 10;
 
+    // Stress management
     if (data.stressLevel > 7) score -= 15;
     else if (data.stressLevel < 4) score += 10;
 
     return Math.max(0, Math.min(100, score));
+  };
+
+  const handleFetchWhoInsight = async () => {
+    if (!selectedCountryCode) return;
+    setWhoLoading(true);
+    setWhoError(null);
+
+    try {
+      const payload = {
+        country_code: selectedCountryCode,
+        country_name: selectedCountryName || undefined,
+        health_score: healthScore,
+        age: healthData?.age,
+        gender: healthData?.gender,
+        exercise: healthData?.exerciseMinutes ? healthData.exerciseMinutes * 7 : undefined, // Convert to weekly for WHO
+        sleep: healthData?.sleepHours,
+      };
+
+      const response = await fetch(`${BACKEND_URL}/who-coach`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch WHO insights");
+      }
+
+      const data = await response.json();
+      setWhoInsight(data.summary || "");
+    } catch (error) {
+      console.error("Failed to fetch WHO insights", error);
+      setWhoError("Could not load WHO-based insights right now.");
+    } finally {
+      setWhoLoading(false);
+    }
   };
 
   const generateDefaultAchievements = (): Achievement[] => {
@@ -234,6 +345,66 @@ const Dashboard = () => {
           className="mb-6 sm:mb-8"
         >
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 text-white drop-shadow-lg">Welcome back</h1>
+        </motion.div>
+
+        {/* WHO Country Insights Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <div className="glass-card border border-white/30 rounded-2xl p-4 sm:p-5 bg-black/30 backdrop-blur-xl">
+            <div className="flex flex-col md:flex-row md:items-end gap-4">
+              <div className="flex-1">
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-1">
+                  WHO Country Insights
+                </h2>
+                <p className="text-xs sm:text-sm text-white/80">
+                  Choose a country to see a coaching summary based on WHO healthy life expectancy data, tailored to your current health score.
+                </p>
+              </div>
+              <div className="w-full md:w-80 space-y-2">
+                <Select
+                  value={selectedCountryCode}
+                  onValueChange={(value) => {
+                    setSelectedCountryCode(value);
+                    const found = countries.find((c) => c.code === value);
+                    setSelectedCountryName(found?.name || "");
+                  }}
+                >
+                  <SelectTrigger className="bg-white/80 border-white/40 text-sm">
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  className="w-full"
+                  size="sm"
+                  onClick={handleFetchWhoInsight}
+                  disabled={whoLoading || !selectedCountryCode}
+                >
+                  {whoLoading ? "Loading WHO insights..." : "Get WHO Insights"}
+                </Button>
+              </div>
+            </div>
+            {(whoInsight || whoError) && (
+              <div className="mt-4 rounded-xl bg-black/30 border border-white/20 p-3 sm:p-4 text-sm text-white/90">
+                {whoError ? (
+                  <p className="text-red-200">{whoError}</p>
+                ) : (
+                  <p className="leading-relaxed whitespace-pre-line">{whoInsight}</p>
+                )}
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Main Dashboard Grid */}
