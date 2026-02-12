@@ -209,22 +209,41 @@ export const extractInfoFromInput = async (
     field: string,
     userInput: string
 ): Promise<string> => {
+    // 1. Regex First-Pass (Fast & Reliable for common patterns)
+    if (field === 'name') {
+        const namePatterns = [
+            /(?:my name is|i am|call me|name's|i'm|called)\s+([a-zA-Z\s]+)/i,
+            /would like to be called\s+([a-zA-Z\s]+)/i,
+            /([a-zA-Z]+)$|([a-zA-Z]+)\./ // Last word as name
+        ];
+
+        for (const pattern of namePatterns) {
+            const match = userInput.match(pattern);
+            if (match) {
+                const potentialName = (match[1] || match[2] || match[3] || "").trim();
+                // Basic validation: names shouldn't be too long or empty
+                if (potentialName && potentialName.length < 20 && potentialName.split(' ').length <= 3) {
+                    return potentialName.charAt(0).toUpperCase() + potentialName.slice(1).toLowerCase();
+                }
+            }
+        }
+    }
+
+    // 2. AI Extraction (For complex conversational context)
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
     if (!apiKey) return userInput;
 
     const prompt = `
-        You are a highly precise data extraction tool.
-        Your goal is to extract the relevant value for the field: "${field}"
+        You are a highly precise data extraction tool. Extract ONLY the specific value requested.
         
-        User Input: "${userInput}"
+        Examples:
+        - Input: "I would like to be called Joel" -> Output: Joel
+        - Input: "my name is Sarah Smith" -> Output: Sarah Smith
+        - Input: "you can call me Michael" -> Output: Michael
+        - Input: "I am 25 years old" -> Output: 25
         
-        Instructions:
-        1. If the field is "name", extract ONLY the person's name (e.g., from "I am Joel" or "call me Joel", extract "Joel").
-        2. If the field is "age", extract ONLY the number.
-        3. If the input contains multiple names, pick the most likely one the user wants to be called.
-        4. If the input is completely irrelevant, return the original input.
-        5. DO NOT provide explanations, punctuation, or any extra text.
-        6. If the user says "you can call me [name]", the output MUST be exactly "[name]".
+        Task: Extract the "${field}" from the following input.
+        Input: "${userInput}"
         
         Output:
     `;
@@ -239,20 +258,23 @@ export const extractInfoFromInput = async (
             body: JSON.stringify({
                 model: 'llama-3.1-8b-instant',
                 messages: [
-                    { role: 'system', content: 'You are a precise data extraction tool that returns ONLY the extracted value.' },
+                    { role: 'system', content: 'You return ONLY the extracted value. No sentences. No punctuation.' },
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0,
-                max_tokens: 15
+                max_tokens: 10
             }),
-        }, 8000); // 8s timeout for extraction
+        }, 8000);
 
         if (!response.ok) return userInput;
         const data = await response.json();
         let extracted = data.choices[0].message.content.trim();
 
+        // Final cleaning
         extracted = extracted.replace(/^(the name is|my name is|i am|call me|extract:|output:)\s*/i, '');
         extracted = extracted.replace(/[.!?,"']+$/g, '');
+
+        if (extracted.toLowerCase() === "unknown" || extracted.length > 30) return userInput;
 
         return extracted || userInput;
     } catch (e) {
