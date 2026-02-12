@@ -355,7 +355,17 @@ export const getGeneralChatResponse = async (
     healthScore: number
 ): Promise<string> => {
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    if (!apiKey) return "I'm having trouble accessing my AI engine. Please ensure your API key is properly set in your environment.";
+
+    console.log("Chatbot Debug: API Key exists?", !!apiKey);
+    if (apiKey) {
+        console.log("Chatbot Debug: Key length:", apiKey.length);
+        console.log("Chatbot Debug: Key prefix:", apiKey.substring(0, 4));
+    }
+
+    if (!apiKey || apiKey === "undefined" || apiKey.length < 10) {
+        console.warn("Chatbot Debug: API Key is missing or invalid.");
+        return "I'm having trouble accessing my AI engine. Please ensure your VITE_GROQ_API_KEY is correctly set in your environment variables and restart the server.";
+    }
 
     const prompt = `
         You are an authoritative and direct Health Analyst named Pulso AI.
@@ -392,12 +402,19 @@ export const getGeneralChatResponse = async (
             }),
         }, 15000);
 
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`Chatbot API Error: ${response.status}`, errorBody);
+            throw new Error(`API Error: ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log("Chatbot Debug: Received AI response");
         return data.choices[0].message.content.trim();
-    } catch (e) {
-        console.error("Chatbot AI Error:", e);
-        return `Based on your profile, you need to focus on optimizing your ${healthData?.sleepHours < 7 ? 'sleep' : 'activity'} patterns. Currently, your ${healthData?.stressLevel > 5 ? 'stress' : 'exercise'} levels are the primary bottleneck to a higher score.`;
+    } catch (e: any) {
+        console.error("Chatbot AI Error Details:", e);
+        const errorMsg = e.name === 'AbortError' ? "request timed out" : "connection failed";
+        return `I'm currently operating in restricted mode due to a ${errorMsg}. Based on your metrics, your ${healthData?.sleepHours < 7 ? 'sleep' : 'activity'} is the best area to target for a higher score than ${healthScore}.`;
     }
 };
 
