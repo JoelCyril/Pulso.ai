@@ -18,6 +18,7 @@ interface Message {
 interface ChatbotProps {
   healthData?: any;
   healthScore?: number;
+  whoInsight?: string;
   onDashboardUpdate?: () => void;
 }
 
@@ -27,7 +28,7 @@ const isHealthRelated = (text: string): boolean => {
   return true;
 };
 
-export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: ChatbotProps) => {
+export const Chatbot = ({ healthData, healthScore = 0, whoInsight, onDashboardUpdate }: ChatbotProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -142,7 +143,7 @@ export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: Chat
   const getAIResponse = async (userInput: string): Promise<string> => {
     try {
       const { getGeneralChatResponse } = await import("@/services/aiHealthService");
-      return await getGeneralChatResponse(userInput, healthData, healthScore);
+      return await getGeneralChatResponse(userInput, healthData, healthScore, whoInsight);
     } catch (e) {
       console.error("Chatbot: AI Call failed:", e);
       return `Based on your profile, you need to focus on optimizing your ${healthData?.sleepHours < 7 ? 'sleep' : 'activity'} patterns. Currently, your ${healthData?.stressLevel > 5 ? 'stress' : 'exercise'} levels are the primary bottleneck to a higher score.`;

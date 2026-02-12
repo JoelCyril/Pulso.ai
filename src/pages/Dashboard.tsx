@@ -520,6 +520,7 @@ const Dashboard = () => {
       <FloatingChatbot
         healthData={healthData}
         healthScore={healthScore}
+        whoInsight={whoInsight}
         onDashboardUpdate={loadDashboardData}
       />
 

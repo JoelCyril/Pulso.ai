@@ -8,10 +8,11 @@ import { Chatbot } from "@/components/chatbot/Chatbot";
 interface FloatingChatbotProps {
     healthData: any;
     healthScore: number;
+    whoInsight?: string;
     onDashboardUpdate: () => void;
 }
 
-export const FloatingChatbot = ({ healthData, healthScore, onDashboardUpdate }: FloatingChatbotProps) => {
+export const FloatingChatbot = ({ healthData, healthScore, whoInsight, onDashboardUpdate }: FloatingChatbotProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -74,6 +75,7 @@ export const FloatingChatbot = ({ healthData, healthScore, onDashboardUpdate }: 
                                 <Chatbot
                                     healthData={healthData}
                                     healthScore={healthScore}
+                                    whoInsight={whoInsight}
                                     onDashboardUpdate={onDashboardUpdate}
                                 />
                             </div>
