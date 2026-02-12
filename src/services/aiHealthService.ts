@@ -22,13 +22,67 @@ const calculateBMI = (weight?: number, height?: number) => {
 
 const BACKEND_URL = import.meta.env.VITE_HEALTHGUARD_API_URL || "http://localhost:8000";
 
+// Helper for fetch with timeout to prevent hangs
+const fetchWithTimeout = async (url: string, options: any, timeout = 10000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (e) {
+        clearTimeout(id);
+        throw e;
+    }
+};
+
+// Simple fallback calculation logic
+const calculateFallbackScore = (data: any) => {
+    let score = 70;
+    if (data.sleepHours >= 7) score += 5;
+    if (data.exerciseMinutes >= 30) score += 5;
+    if (data.alcoholDrinks <= 2) score += 5;
+    if (data.stressLevel <= 4) score += 5;
+    if (data.screenTimeHours > 6) score -= 5;
+    return Math.min(100, Math.max(0, score));
+};
+
+// Helper for standard fallback analysis
+const getFallbackAnalysis = (healthData: any, score: number, bmi: string | number): HealthAnalysisResult => ({
+    score: score,
+    isMlBased: false,
+    lifeExpectancy: 78,
+    bmi: typeof bmi === 'string' ? parseFloat(bmi) || 22.5 : bmi,
+    summary: "Your health profile shows good foundations, though there's room for optimization in sleep and activity levels.",
+    risks: ["Type 2 Diabetes", "Cardiovascular Disease", "Mental Fatigue"],
+    comparison: {
+        sleep: "Slightly below population average (7.1h)",
+        activity: "Average for your age group",
+        overall: "You represent the top 45% of similar profiles"
+    },
+    insights: [
+        "Increasing sleep by 45 mins could boost your score by ~8 points",
+        "Reducing screen time before bed correlates with 20% better sleep quality",
+        "Your hydration is excellent, keeping you in the top tier for recovery"
+    ]
+});
+
 export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysisResult> => {
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
     let whoContext = "";
 
+    // 0. Quick check for API key
+    if (!apiKey) {
+        console.warn("No Groq API key found. Using mock data.");
+        return getFallbackAnalysis(healthData, calculateFallbackScore(healthData), calculateBMI(healthData.weightKg, healthData.heightCm));
+    }
+
     // Fetch WHO context for the user's country
     try {
-        const whoResponse = await fetch(`${BACKEND_URL}/who-coach`, {
+        const whoResponse = await fetchWithTimeout(`${BACKEND_URL}/who-coach`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -37,7 +91,8 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
                 gender: healthData.gender,
                 health_score: calculateFallbackScore(healthData)
             })
-        });
+        }, 5000); // 5s timeout for backend
+
         if (whoResponse.ok) {
             const whoData = await whoResponse.json();
             whoContext = `\nWHO Context for User's Country (${whoData.country}):\n- Healthy Life Expectancy (HALE) at Birth: ${whoData.hale_at_birth} years\n- Global Average HALE: ${whoData.hale_global} years\n- Country Status: ${whoData.hale_comparison}\n- WHO Coaching Summary: ${whoData.summary}\n`;
@@ -46,36 +101,13 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
         console.warn("Could not fetch WHO context for AI prompt, proceeding without it.");
     }
 
-    if (!apiKey) {
-        // Fallback if no API key is present (for development/demo)
-        console.warn("No Groq API key found. Using mock data.");
-        return {
-            score: calculateFallbackScore(healthData),
-            isMlBased: false,
-            lifeExpectancy: 78,
-            bmi: parseFloat(calculateBMI(healthData.weightKg, healthData.heightCm) as string) || 22.5,
-            summary: "Your health profile shows good foundations, though there's room for optimization in sleep and activity levels.",
-            risks: ["Type 2 Diabetes", "Cardiovascular Disease", "Mental Fatigue"],
-            comparison: {
-                sleep: "Slightly below population average (7.1h)",
-                activity: "Average for your age group",
-                overall: "You represent the top 45% of similar profiles"
-            },
-            insights: [
-                "Increasing sleep by 45 mins could boost your score by ~8 points",
-                "Reducing screen time before bed correlates with 20% better sleep quality",
-                "Your hydration is excellent, keeping you in the top tier for recovery"
-            ]
-        };
-    }
-
     const roi = calculateBMI(healthData.weightKg, healthData.heightCm);
     let healthScore = calculateFallbackScore(healthData);
     let isMlBased = false;
 
     // 1. Fetch Objective ML Score from Backend
     try {
-        const mlResponse = await fetch(`${BACKEND_URL}/predict-score`, {
+        const mlResponse = await fetchWithTimeout(`${BACKEND_URL}/predict-score`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -85,7 +117,7 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
                 exercise: healthData.exerciseMinutes,
                 stress: healthData.stressLevel
             })
-        });
+        }, 5000);
         if (mlResponse.ok) {
             const mlData = await mlResponse.json();
             healthScore = Math.round(mlData.predicted_score);
@@ -142,7 +174,7 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
   `;
 
     try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -157,7 +189,7 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
                 temperature: 0.5,
                 response_format: { type: "json_object" }
             }),
-        });
+        }, 12000); // 12s timeout for AI
 
         if (!response.ok) {
             throw new Error(`Groq API Error: ${response.statusText}`);
@@ -169,36 +201,8 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
 
     } catch (error) {
         console.error("AI Analysis Failed:", error);
-        // Return fallback data on error to prevent app crash
-        return {
-            score: healthScore,
-            isMlBased: false,
-            lifeExpectancy: 78,
-            bmi: parseFloat(roi as string) || 22.5,
-            summary: "We couldn't reach the AI server, so this is a basic estimate.",
-            risks: ["General health risks", "Lifestyle-related issues"],
-            comparison: {
-                sleep: "Data unavailable",
-                activity: "Data unavailable",
-                overall: "Data unavailable"
-            },
-            insights: [
-                "Please check your internet connection and try again.",
-                "Ensure your API key is correctly configured."
-            ]
-        };
+        return getFallbackAnalysis(healthData, healthScore, roi);
     }
-};
-
-// Simple fallback calculation logic
-const calculateFallbackScore = (data: any) => {
-    let score = 70;
-    if (data.sleepHours >= 7) score += 5;
-    if (data.exerciseMinutes >= 30) score += 5;
-    if (data.alcoholDrinks <= 2) score += 5;
-    if (data.stressLevel <= 4) score += 5;
-    if (data.screenTimeHours > 6) score -= 5;
-    return Math.min(100, Math.max(0, score));
 };
 
 export const extractInfoFromInput = async (
@@ -226,7 +230,7 @@ export const extractInfoFromInput = async (
     `;
 
     try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -241,15 +245,13 @@ export const extractInfoFromInput = async (
                 temperature: 0,
                 max_tokens: 15
             }),
-        });
+        }, 8000); // 8s timeout for extraction
 
         if (!response.ok) return userInput;
         const data = await response.json();
         let extracted = data.choices[0].message.content.trim();
 
-        // Final cleaning: remove common conversational prefixes the AI might accidentally include
         extracted = extracted.replace(/^(the name is|my name is|i am|call me|extract:|output:)\s*/i, '');
-        // Remove trailing punctuation
         extracted = extracted.replace(/[.!?,"']+$/g, '');
 
         return extracted || userInput;
@@ -265,7 +267,6 @@ export const generateNextQuestion = async (
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
     const name = healthData.name || "friend";
 
-    // Fallback questions if offline/no key
     const fallbacks: Record<string, string> = {
         age: `Nice to meet you, ${name}. To customize your plan, how old are you?`,
         gender: "Thanks. For biological accuracy, which gender do you identify with?",
@@ -300,7 +301,7 @@ export const generateNextQuestion = async (
     `;
 
     try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -315,7 +316,7 @@ export const generateNextQuestion = async (
                 temperature: 0.7,
                 max_tokens: 60
             }),
-        });
+        }, 8000); // 8s timeout
 
         if (!response.ok) throw new Error("API Error");
         const data = await response.json();
