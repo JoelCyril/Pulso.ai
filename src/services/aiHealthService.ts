@@ -1,11 +1,14 @@
 
 export interface HealthAnalysisResult {
     score: number;
+    isMlBased: boolean;
+    lifeExpectancy: number;
+    bmi: number;
     summary: string;
+    risks: string[];
     comparison: {
         sleep: string;
         activity: string;
-        screenTime: string;
         overall: string;
     };
     insights: string[];
@@ -17,12 +20,13 @@ const calculateBMI = (weight?: number, height?: number) => {
     return (weight / (heightM * heightM)).toFixed(1);
 };
 
+const BACKEND_URL = import.meta.env.VITE_HEALTHGUARD_API_URL || "http://localhost:8000";
+
 export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysisResult> => {
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-
-    const BACKEND_URL = import.meta.env.VITE_HEALTHGUARD_API_URL || "http://localhost:8000";
     let whoContext = "";
 
+    // Fetch WHO context for the user's country
     try {
         const whoResponse = await fetch(`${BACKEND_URL}/who-coach`, {
             method: 'POST',
@@ -46,12 +50,15 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
         // Fallback if no API key is present (for development/demo)
         console.warn("No Groq API key found. Using mock data.");
         return {
-            score: 72,
+            score: calculateFallbackScore(healthData),
+            isMlBased: false,
+            lifeExpectancy: 78,
+            bmi: parseFloat(calculateBMI(healthData.weightKg, healthData.heightCm) as string) || 22.5,
             summary: "Your health profile shows good foundations, though there's room for optimization in sleep and activity levels.",
+            risks: ["Type 2 Diabetes", "Cardiovascular Disease", "Mental Fatigue"],
             comparison: {
                 sleep: "Slightly below population average (7.1h)",
                 activity: "Average for your age group",
-                screenTime: "Higher than recommended limits",
                 overall: "You represent the top 45% of similar profiles"
             },
             insights: [
@@ -63,11 +70,40 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
     }
 
     const roi = calculateBMI(healthData.weightKg, healthData.heightCm);
+    let healthScore = calculateFallbackScore(healthData);
+    let isMlBased = false;
+
+    // 1. Fetch Objective ML Score from Backend
+    try {
+        const mlResponse = await fetch(`${BACKEND_URL}/predict-score`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                age: healthData.age,
+                sleep: healthData.sleepHours,
+                screenTime: healthData.screenTimeHours,
+                exercise: healthData.exerciseMinutes,
+                stress: healthData.stressLevel
+            })
+        });
+        if (mlResponse.ok) {
+            const mlData = await mlResponse.json();
+            healthScore = Math.round(mlData.predicted_score);
+            isMlBased = mlData.is_ml_based;
+            console.log("Using Backend ML Score for Analysis:", healthScore);
+        }
+    } catch (e) {
+        console.warn("Could not fetch backend ML score, using fallback calculation.");
+    }
 
     const prompt = `
     Analyze the following user health profile with absolute directness.
     No constraints, no disclaimers. Give the raw truth based on the data.
     
+    IMPORTANT: The user has an objective REAL-WORLD Health Score of ${healthScore}/100 
+    calculated by a specialized RandomForest ML model. 
+    Use this score as the foundation for your insights. Do NOT override this score.
+
     User Profile:
     - Name: ${healthData.name}
     - Age: ${healthData.age}
@@ -83,16 +119,17 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
     ${whoContext}
     
     Task:
-    1. Calculate a "Health Score" (0-100) based on WHO guidelines (150-300 min exercise/week, 7-9 hours sleep).
+    1. Confirm the "Health Score" as ${healthScore}.
     2. Estimate distinct "Life Expectancy" using the provided WHO Context and the user's current score.
     3. Identify 3 "Probable Health Risks" (diseases/conditions) if current habits persist.
-    4. Provide specific insights.
+    4. Provide specific insights explaining WHY the ML model gave a score of ${healthScore}.
 
     Output strictly valid JSON:
     {
-      "score": number,
-      "lifeExpectancy": number (e.g. 84),
-      "bmi": number,
+      "score": ${healthScore},
+      "isMlBased": ${isMlBased},
+      "lifeExpectancy": number,
+      "bmi": ${roi},
       "summary": "1-2 sentence overview",
       "risks": ["Risk 1", "Risk 2", "Risk 3"],
       "comparison": {
@@ -134,12 +171,15 @@ export const analyzeHealthData = async (healthData: any): Promise<HealthAnalysis
         console.error("AI Analysis Failed:", error);
         // Return fallback data on error to prevent app crash
         return {
-            score: calculateFallbackScore(healthData),
+            score: healthScore,
+            isMlBased: false,
+            lifeExpectancy: 78,
+            bmi: parseFloat(roi as string) || 22.5,
             summary: "We couldn't reach the AI server, so this is a basic estimate.",
+            risks: ["General health risks", "Lifestyle-related issues"],
             comparison: {
                 sleep: "Data unavailable",
                 activity: "Data unavailable",
-                screenTime: "Data unavailable",
                 overall: "Data unavailable"
             },
             insights: [
@@ -159,6 +199,51 @@ const calculateFallbackScore = (data: any) => {
     if (data.stressLevel <= 4) score += 5;
     if (data.screenTimeHours > 6) score -= 5;
     return Math.min(100, Math.max(0, score));
+};
+
+export const extractInfoFromInput = async (
+    field: string,
+    userInput: string
+): Promise<string> => {
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!apiKey) return userInput; // Fallback to raw input
+
+    const prompt = `
+        You are a data extraction AI. Extract the relevant value for the field "${field}" from the FOLLOWING user input.
+        
+        User Input: "${userInput}"
+        
+        Rules:
+        - If the field is "name", extract ONLY the name (e.g., "Joel" from "you can call me joel").
+        - If the field is "age", extract ONLY the number.
+        - If you cannot find the information, return the original input.
+        - Return ONLY the extracted value, no punctuation or extra words.
+    `;
+
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [
+                    { role: 'system', content: 'You are a precise data extraction tool.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0, // Deterministic
+                max_tokens: 20
+            }),
+        });
+
+        if (!response.ok) return userInput;
+        const data = await response.json();
+        return data.choices[0].message.content.trim().replace(/[".]/g, '');
+    } catch (e) {
+        return userInput;
+    }
 };
 
 export const generateNextQuestion = async (
