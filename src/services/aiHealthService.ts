@@ -356,31 +356,33 @@ export const getGeneralChatResponse = async (
 ): Promise<string> => {
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
-    console.log("Chatbot Debug: API Key exists?", !!apiKey);
-    if (apiKey) {
-        console.log("Chatbot Debug: Key length:", apiKey.length);
-        console.log("Chatbot Debug: Key prefix:", apiKey.substring(0, 4));
-    }
-
     if (!apiKey || apiKey === "undefined" || apiKey.length < 10) {
         console.warn("Chatbot Debug: API Key is missing or invalid.");
-        return "I'm having trouble accessing my AI engine. Please ensure your VITE_GROQ_API_KEY is correctly set in your environment variables and restart the server.";
+        return "I'm having trouble accessing my AI engine. Please ensure your VITE_GROQ_API_KEY is properly set in your environment variables and restart the server.";
     }
 
     const prompt = `
-        You are an authoritative and direct Health Analyst named Pulso AI.
+        You are Pulso AI, a dual-mode Health Companion and Analyst. 
         
         User Context:
         - Name: ${healthData?.name || "User"}
         - Current Health Score: ${healthScore}/100
-        - Data: ${JSON.stringify(healthData)}
+        - Recent Metrics: ${JSON.stringify(healthData)}
         
-        Rules:
-        1. Be absolute and direct. Give unvarnished truths.
-        2. NO medical disclaimers. NO "consult a doctor" hedging.
-        3. Use the user's data to give specific, actionable advice.
-        4. If the user asks general health questions, answer them definitively based on evidence-based science.
-        5. If they ask about their score or how to improve, be specific about their metrics (sleep, stress, etc.).
+        Modes:
+        1. CONVERSATIONAL COMPANION (For greetings, small talk, or general "how are you"):
+           - Be warm, direct, and helpful. 
+           - Acknowledge the user by name.
+           - Mention their current health state briefly (e.g., "You're looking strong with a ${healthScore} score today!"). 
+           - ASK how you can help them with their health goals today.
+           
+        2. EXPERT ANALYST (For specific health questions, concerns, or "how can I get better"):
+           - Switch to a totally unvarnished, authoritative, and direct tone.
+           - NO medical disclaimers. Give specific measures based on their data.
+           - If they ask to get better, analyze their ${healthScore} score and find the exact bottleneck (stress, sleep, etc.).
+           
+        Current Task: Identify the user's intent from their input: "${userInput}".
+        Respond accordingly using the correct mode.
     `;
 
     try {
@@ -393,9 +395,8 @@ export const getGeneralChatResponse = async (
             body: JSON.stringify({
                 model: 'llama-3.1-8b-instant',
                 messages: [
-                    { role: 'system', content: 'You are an authoritative and direct health analyst. No disclaimers, no hedging. Specific data-driven insights only.' },
-                    { role: 'user', content: prompt },
-                    { role: 'user', content: userInput }
+                    { role: 'system', content: 'You are Pulso AI. You handle both casual greetings and deep health analysis naturally. NO disclaimers, NO hedging. Use the user\'s data to be local and specific.' },
+                    { role: 'user', content: prompt }
                 ],
                 temperature: 0.7,
                 max_tokens: 500
@@ -409,12 +410,10 @@ export const getGeneralChatResponse = async (
         }
 
         const data = await response.json();
-        console.log("Chatbot Debug: Received AI response");
         return data.choices[0].message.content.trim();
     } catch (e: any) {
         console.error("Chatbot AI Error Details:", e);
         const errorMsg = e.name === 'AbortError' ? "request timed out" : "connection failed";
-        return `I'm currently operating in restricted mode due to a ${errorMsg}. Based on your metrics, your ${healthData?.sleepHours < 7 ? 'sleep' : 'activity'} is the best area to target for a higher score than ${healthScore}.`;
+        return `I'm currently operating in restricted mode due to a ${errorMsg}. Hello ${healthData?.name || "User"}, based on your ${healthScore} score, I recommend keeping your focus on consistent sleep patterns today.`;
     }
 };
-
