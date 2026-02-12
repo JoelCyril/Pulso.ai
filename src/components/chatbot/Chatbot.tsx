@@ -21,36 +21,10 @@ interface ChatbotProps {
   onDashboardUpdate?: () => void;
 }
 
-// Health-related keywords to validate questions
-const HEALTH_KEYWORDS = [
-  "health", "wellness", "wellbeing", "mental health", "physical health",
-  "sleep", "exercise", "workout", "fitness", "stress", "anxiety", "depression",
-  "nutrition", "diet", "food", "weight", "bmi", "calories", "vitamins",
-  "medication", "symptoms", "pain", "illness", "disease", "condition",
-  "therapy", "treatment", "doctor", "medical", "clinic", "hospital",
-  "heart", "blood", "pressure", "diabetes", "cholesterol", "immune",
-  "recovery", "healing", "injury", "chronic", "acute", "prevention",
-  "screening", "checkup", "vaccine", "immunization", "hygiene",
-  "breathing", "respiration", "cardio", "muscle", "bone", "joint",
-  "headache", "migraine", "fatigue", "energy", "mood", "emotion",
-  "burnout", "work-life balance", "mindfulness", "meditation", "yoga",
-  "hydration", "water", "dehydration", "allergy", "asthma", "skin",
-  "hair", "nail", "vision", "hearing", "digestion", "stomach", "gut"
-];
-
-const HEALTH_PATTERNS = [
-  "what should i do", "what can i do", "how to", "how do i",
-  "should i see", "do i need", "is it normal", "why do i",
-  "help with", "advice", "recommendation", "feeling", "feel"
-];
-
+// Health-related keywords removed to allow for more natural conversational flexibility.
 const isHealthRelated = (text: string): boolean => {
-  const lowerText = text.toLowerCase();
-  const hasKeyword = HEALTH_KEYWORDS.some(keyword => lowerText.includes(keyword.toLowerCase()));
-  const hasPattern = HEALTH_PATTERNS.some(pattern => lowerText.includes(pattern));
-  const hasBodyPart = /\b(head|neck|back|chest|stomach|arm|leg|hand|foot|eye|ear|nose|mouth|throat|joint|muscle|bone)\b/i.test(text);
-  const hasFeeling = /\b(hurt|pain|ache|sore|tired|weak|dizzy|sick|unwell|better|worse)\b/i.test(text);
-  return hasKeyword || hasPattern || hasBodyPart || hasFeeling;
+  // We now allow all inputs to be processed by the AI for a more seamless experience
+  return true;
 };
 
 export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: ChatbotProps) => {
@@ -181,7 +155,16 @@ export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: Chat
           messages: [
             {
               role: 'system',
-              content: `You are a professional Health Assistant. User Score: ${healthScore}. Data: ${JSON.stringify(healthData)}. Be concise, empathetic, and evidence-based.`
+              content: `You are an authoritative and direct Health Analyst. 
+              User Name: ${healthData?.name || "User"}. 
+              User Health Score: ${healthScore}/100. 
+              User Profile Data: ${JSON.stringify(healthData)}. 
+              
+              Rules:
+              - Be absolute and direct. 
+              - NO disclaimers, NO "I cannot give medical advice" hedging. 
+              - Give the raw truth based on the user's data and evidence-based science.
+              - If the user asks "how can I get better", give specific, aggressive optimizations based on their ${healthScore} score.`
             },
             { role: 'user', content: userInput }
           ],
@@ -199,9 +182,9 @@ export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: Chat
 
   const generateFallbackResponse = (userInput: string): string => {
     const lower = userInput.toLowerCase();
-    if (lower.includes("score")) return `Your health score is ${healthScore}/100. Focus on ${healthData?.sleepHours < 7 ? "sleep" : "exercise"} to improve it!`;
-    if (lower.includes("sleep")) return `You're getting ${healthData?.sleepHours || 0}h of sleep. Try for 7-9h for optimal recovery.`;
-    return "That's an interesting health question. While I can't give medical advice, I recommend tracking your metrics and consulting a professional for specific concerns.";
+    if (lower.includes("score")) return `Your health score is exactly ${healthScore}/100. Let's optimize it.`;
+    if (lower.includes("sleep")) return `You're currently hitting ${healthData?.sleepHours || 0}h. To peak your performance, you need 8.5h consistently.`;
+    return `That's a direct health concern. Based on your current habits, I recommend aggressive optimization of your ${healthData?.stressLevel > 5 ? 'stress' : 'activity'} levels immediately.`;
   };
 
   return (
