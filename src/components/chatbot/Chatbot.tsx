@@ -140,51 +140,13 @@ export const Chatbot = ({ healthData, healthScore = 0, onDashboardUpdate }: Chat
   };
 
   const getAIResponse = async (userInput: string): Promise<string> => {
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    if (!apiKey) return generateFallbackResponse(userInput);
-
     try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          messages: [
-            {
-              role: 'system',
-              content: `You are an authoritative and direct Health Analyst. 
-              User Name: ${healthData?.name || "User"}. 
-              User Health Score: ${healthScore}/100. 
-              User Profile Data: ${JSON.stringify(healthData)}. 
-              
-              Rules:
-              - Be absolute and direct. 
-              - NO disclaimers, NO "I cannot give medical advice" hedging. 
-              - Give the raw truth based on the user's data and evidence-based science.
-              - If the user asks "how can I get better", give specific, aggressive optimizations based on their ${healthScore} score.`
-            },
-            { role: 'user', content: userInput }
-          ],
-          temperature: 0.7,
-        }),
-      });
-
-      if (!response.ok) throw new Error("AI Error");
-      const data = await response.json();
-      return data.choices[0].message.content;
+      const { getGeneralChatResponse } = await import("@/services/aiHealthService");
+      return await getGeneralChatResponse(userInput, healthData, healthScore);
     } catch (e) {
-      return generateFallbackResponse(userInput);
+      console.error("Chatbot: AI Call failed:", e);
+      return `Based on your profile, you need to focus on optimizing your ${healthData?.sleepHours < 7 ? 'sleep' : 'activity'} patterns. Currently, your ${healthData?.stressLevel > 5 ? 'stress' : 'exercise'} levels are the primary bottleneck to a higher score.`;
     }
-  };
-
-  const generateFallbackResponse = (userInput: string): string => {
-    const lower = userInput.toLowerCase();
-    if (lower.includes("score")) return `Your health score is exactly ${healthScore}/100. Let's optimize it.`;
-    if (lower.includes("sleep")) return `You're currently hitting ${healthData?.sleepHours || 0}h. To peak your performance, you need 8.5h consistently.`;
-    return `That's a direct health concern. Based on your current habits, I recommend aggressive optimization of your ${healthData?.stressLevel > 5 ? 'stress' : 'activity'} levels immediately.`;
   };
 
   return (

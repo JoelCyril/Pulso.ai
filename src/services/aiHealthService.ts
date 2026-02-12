@@ -348,3 +348,56 @@ export const generateNextQuestion = async (
         return fallbacks[field];
     }
 };
+
+export const getGeneralChatResponse = async (
+    userInput: string,
+    healthData: any,
+    healthScore: number
+): Promise<string> => {
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!apiKey) return "I'm having trouble accessing my AI engine. Please ensure your API key is properly set in your environment.";
+
+    const prompt = `
+        You are an authoritative and direct Health Analyst named Pulso AI.
+        
+        User Context:
+        - Name: ${healthData?.name || "User"}
+        - Current Health Score: ${healthScore}/100
+        - Data: ${JSON.stringify(healthData)}
+        
+        Rules:
+        1. Be absolute and direct. Give unvarnished truths.
+        2. NO medical disclaimers. NO "consult a doctor" hedging.
+        3. Use the user's data to give specific, actionable advice.
+        4. If the user asks general health questions, answer them definitively based on evidence-based science.
+        5. If they ask about their score or how to improve, be specific about their metrics (sleep, stress, etc.).
+    `;
+
+    try {
+        const response = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [
+                    { role: 'system', content: 'You are an authoritative and direct health analyst. No disclaimers, no hedging. Specific data-driven insights only.' },
+                    { role: 'user', content: prompt },
+                    { role: 'user', content: userInput }
+                ],
+                temperature: 0.7,
+                max_tokens: 500
+            }),
+        }, 15000);
+
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        const data = await response.json();
+        return data.choices[0].message.content.trim();
+    } catch (e) {
+        console.error("Chatbot AI Error:", e);
+        return `Based on your profile, you need to focus on optimizing your ${healthData?.sleepHours < 7 ? 'sleep' : 'activity'} patterns. Currently, your ${healthData?.stressLevel > 5 ? 'stress' : 'exercise'} levels are the primary bottleneck to a higher score.`;
+    }
+};
+
