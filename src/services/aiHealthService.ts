@@ -206,18 +206,23 @@ export const extractInfoFromInput = async (
     userInput: string
 ): Promise<string> => {
     const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    if (!apiKey) return userInput; // Fallback to raw input
+    if (!apiKey) return userInput;
 
     const prompt = `
-        You are a data extraction AI. Extract the relevant value for the field "${field}" from the FOLLOWING user input.
+        You are a highly precise data extraction tool.
+        Your goal is to extract the relevant value for the field: "${field}"
         
         User Input: "${userInput}"
         
-        Rules:
-        - If the field is "name", extract ONLY the name (e.g., "Joel" from "you can call me joel").
-        - If the field is "age", extract ONLY the number.
-        - If you cannot find the information, return the original input.
-        - Return ONLY the extracted value, no punctuation or extra words.
+        Instructions:
+        1. If the field is "name", extract ONLY the person's name (e.g., from "I am Joel" or "call me Joel", extract "Joel").
+        2. If the field is "age", extract ONLY the number.
+        3. If the input contains multiple names, pick the most likely one the user wants to be called.
+        4. If the input is completely irrelevant, return the original input.
+        5. DO NOT provide explanations, punctuation, or any extra text.
+        6. If the user says "you can call me [name]", the output MUST be exactly "[name]".
+        
+        Output:
     `;
 
     try {
@@ -230,17 +235,24 @@ export const extractInfoFromInput = async (
             body: JSON.stringify({
                 model: 'llama-3.1-8b-instant',
                 messages: [
-                    { role: 'system', content: 'You are a precise data extraction tool.' },
+                    { role: 'system', content: 'You are a precise data extraction tool that returns ONLY the extracted value.' },
                     { role: 'user', content: prompt }
                 ],
-                temperature: 0, // Deterministic
-                max_tokens: 20
+                temperature: 0,
+                max_tokens: 15
             }),
         });
 
         if (!response.ok) return userInput;
         const data = await response.json();
-        return data.choices[0].message.content.trim().replace(/[".]/g, '');
+        let extracted = data.choices[0].message.content.trim();
+
+        // Final cleaning: remove common conversational prefixes the AI might accidentally include
+        extracted = extracted.replace(/^(the name is|my name is|i am|call me|extract:|output:)\s*/i, '');
+        // Remove trailing punctuation
+        extracted = extracted.replace(/[.!?,"']+$/g, '');
+
+        return extracted || userInput;
     } catch (e) {
         return userInput;
     }
